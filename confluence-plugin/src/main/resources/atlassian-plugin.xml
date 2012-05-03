@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<atlassian-plugin key="${project.groupId}.${project.artifactId}" name="${project.name}" plugins-version="2">
+	<plugin-info>
+		<description>${project.description}</description>
+		<version>${project.version}</version>
+		<vendor name="${project.organization.name}" url="${project.organization.url}" />
+	</plugin-info>
+
+	<web-item key="msunc-link" name="Microsoft Network Link"
+		section="system.editor.link.browser.tabs" weight="45">
+		<label>Microsoft Network Link</label>
+		<link linkId='msunc'>#</link>
+	</web-item>
+
+	<web-resource key="link-msunc-path" name="Windows UNC link browser">
+		<description>Simplifies linking to Windows UNC resources</description>
+		<resource type="download" name="link-msunc-path.js" location="js/link-msunc-path.js" />
+		<context>editor</context>
+	</web-resource>
+
+	<!--xhtml-macro name="potpourri" class="uk.co.jessamine.confluence.potpourri.ExampleMacro" 
+		key="my-macro"> <parameters/> </xhtml-macro -->
+</atlassian-plugin>
