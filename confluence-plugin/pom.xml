@@ -7,11 +7,11 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.co.jessamine.confluence</groupId>
     <artifactId>potpourri</artifactId>
-    <version>0.4-beta1</version>
+    <version>0.5-beta1</version>
 
     <organization>
         <name>Adam Butcher</name>
-        <url>http://www.example.com/</url>
+        <url>https://bitbucket.org/abutcher/</url>
     </organization>
 
     <name>Confluence Potpourri</name>
