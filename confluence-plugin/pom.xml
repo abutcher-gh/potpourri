@@ -30,6 +30,12 @@
             <artifactId>confluence</artifactId>
             <version>${confluence.version}</version>
             <scope>provided</scope>
+            <exclusions>
+              <exclusion>
+                <artifactId>connector</artifactId>
+                <groupId>javax.resource</groupId>
+              </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.atlassian.confluence.plugin</groupId>
