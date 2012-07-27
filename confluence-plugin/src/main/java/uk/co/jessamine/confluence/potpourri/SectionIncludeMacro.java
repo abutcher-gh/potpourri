@@ -24,9 +24,7 @@ public class SectionIncludeMacro implements Macro
     	return "<p><strong>SectionIncludeMacro: <em>Error:</em></strong> " + error + "</p>";
     }
     
-    // TODO: match also ((ac:name="hshift">N))
-
-	private static Pattern patterns = Pattern.compile("</?h[1-6]\\b");
+	private static Pattern headingPattern = Pattern.compile("</?h[1-6]");
     
     @Override
     public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -52,8 +50,9 @@ public class SectionIncludeMacro implements Macro
 
     	String included = page.getBodyAsString();
 
-    	Matcher m = patterns.matcher(included);
+    	Matcher m = headingPattern.matcher(included);
     	StringBuffer sb = new StringBuffer();
+    	int lastHtagStart = 0;
     	while (m.find())
     	{
     		int off = m.start();
@@ -61,20 +60,89 @@ public class SectionIncludeMacro implements Macro
     		// process <hN>...</hN> elements
     		if (included.charAt(off) == '<')
     		{
-    			if (included.charAt(off+1) == '/')
-        			m.appendReplacement(sb, "</h" + Integer.toString(included.charAt(off+3) - '0' + hshift));
+    			if (included.charAt(off+1) != '/')
+    			{
+    				int newLevel = included.charAt(off+2) - '0' + hshift;
+    				if (newLevel > 6)
+    					newLevel = 6; // XXX: better alternative might be to change to one-line strong paragraph
+
+    				lastHtagStart = off; // record for capturing the section title (for anchoring)
+    				
+        			m.appendReplacement(sb, Matcher.quoteReplacement("<h" + newLevel));
+    			}
     			else
-        			m.appendReplacement(sb, "<h" + Integer.toString(included.charAt(off+2) - '0' + hshift));
+    			{
+    				int newLevel = included.charAt(off+3) - '0' + hshift;
+    				if (newLevel > 6)
+    					newLevel = 6; // XXX: better alternative might be to change to one-line strong paragraph 
+
+        			// create an anchor so that the heading is link-able and appears in the TOC
+        			//
+        			int titleStart = included.indexOf('>', lastHtagStart) + 1;
+        			String sectionTitle = included.substring(titleStart, off);
+        			
+        			String idAttr = " id='"
+        						  + "S" + hshift + "-"
+        						  + makeSectionAnchorName(
+        								  context.getPageContext().getPageTitle(),
+        					              sectionTitle)
+        					      + "'"
+        					      ;
+        			
+        			// insert id= within previous <hN> tag; this is tricky as appendReplacement alters the matcher
+        			// state.  This is workedaround by appending the id string in the wrong place (the text of the
+        			// heading) to get the matcher iterators updated appropriately, then overwriting the string
+        			// buffer with the correct string in the correct location (the header tag).
+        			//
+        			m.appendReplacement(sb, Matcher.quoteReplacement(idAttr + "</h" + newLevel));
+        			
+        			// shift the id= attribute to be inside the opening tag
+        			//                     |::::|[-------------]
+        			//  i.e. start with <hN>Title id="something"</hN>
+        			//       end with   <hN id="something">Title</hN>
+        			//                     [-------------]|::::|
+        			int idInsertionPoint = sb.indexOf(">", sb.lastIndexOf("<h"+newLevel));
+        			sb.replace(idInsertionPoint, idInsertionPoint + idAttr.length() + sectionTitle.length() + 1, idAttr + ">" + sectionTitle);
+    			}
     		}
-    		
-            // TODO: replace nested ((ac:name="hshift">N))
-            // TODO: with ((ac:name="hshift">N+hshift))
     	}
     	m.appendTail(sb);
-        return sb.toString();
+    	
+    	// TODO: use XhtmlContent to convert macro invocations after  
+        // TODO: replacing nested ((ac:name="hshift">N))
+        // TODO: with ((ac:name="hshift">N+hshift))
+    	
+    	return sb.toString();
     }
 
-    @Override
+	private static Pattern linkSpecialChars = Pattern.compile("[ (){}\\[\\]\\/@-]");
+
+    private String makeSectionAnchorName(String pageTitle, String sectionTitle)
+    {
+    	String anchorName = pageTitle + "-" + sectionTitle;
+    	Matcher m = linkSpecialChars.matcher(anchorName);
+    	StringBuffer rc = new StringBuffer();
+    	int keepHypenAt = pageTitle.length();
+    	while (m.find())
+    	{
+    		int off = m.start();
+    		if (off == keepHypenAt)
+    		{
+    			m.appendReplacement(rc, "-");
+    			continue;
+    		}
+    		char c = anchorName.charAt(off);
+    		switch (c)
+    		{
+    		case ' ': m.appendReplacement(rc, ""); break;
+    		default : m.appendReplacement(rc, "%"+Integer.toHexString(0x100 | c).substring(1)); break;
+    		}
+    	}
+    	m.appendTail(rc);
+    	return rc.toString();
+	}
+
+	@Override
     public BodyType getBodyType()
     {
         return BodyType.NONE;
