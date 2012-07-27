@@ -5,18 +5,22 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.atlassian.confluence.content.render.xhtml.ConversionContext;
+import com.atlassian.confluence.content.render.xhtml.XhtmlException;
 import com.atlassian.confluence.macro.Macro;
 import com.atlassian.confluence.macro.MacroExecutionException;
 import com.atlassian.confluence.pages.PageManager;
 import com.atlassian.confluence.pages.Page;
+import com.atlassian.confluence.xhtml.api.XhtmlContent;
 
 public class SectionIncludeMacro implements Macro
 {
     private final PageManager pageManager;
+    private final XhtmlContent xhtmlUtils;
     
-    public SectionIncludeMacro(PageManager pageManager)
+    public SectionIncludeMacro(PageManager pageManager, XhtmlContent xhtmlUtils)
     {
         this.pageManager = pageManager;
+        this.xhtmlUtils = xhtmlUtils;
     }
 
     private static String error(String error)
@@ -76,71 +80,22 @@ public class SectionIncludeMacro implements Macro
     				if (newLevel > 6)
     					newLevel = 6; // XXX: better alternative might be to change to one-line strong paragraph 
 
-        			// create an anchor so that the heading is link-able and appears in the TOC
-        			//
-        			int titleStart = included.indexOf('>', lastHtagStart) + 1;
-        			String sectionTitle = included.substring(titleStart, off);
-        			
-        			String idAttr = " id='"
-        						  + "S" + hshift + "-"
-        						  + makeSectionAnchorName(
-        								  context.getPageContext().getPageTitle(),
-        					              sectionTitle)
-        					      + "'"
-        					      ;
-        			
-        			// insert id= within previous <hN> tag; this is tricky as appendReplacement alters the matcher
-        			// state.  This is workedaround by appending the id string in the wrong place (the text of the
-        			// heading) to get the matcher iterators updated appropriately, then overwriting the string
-        			// buffer with the correct string in the correct location (the header tag).
-        			//
-        			m.appendReplacement(sb, Matcher.quoteReplacement(idAttr + "</h" + newLevel));
-        			
-        			// shift the id= attribute to be inside the opening tag
-        			//                     |::::|[-------------]
-        			//  i.e. start with <hN>Title id="something"</hN>
-        			//       end with   <hN id="something">Title</hN>
-        			//                     [-------------]|::::|
-        			int idInsertionPoint = sb.indexOf(">", sb.lastIndexOf("<h"+newLevel));
-        			sb.replace(idInsertionPoint, idInsertionPoint + idAttr.length() + sectionTitle.length() + 1, idAttr + ">" + sectionTitle);
+        			m.appendReplacement(sb, Matcher.quoteReplacement("<span class='hidden'>S" + hshift + "</span></h" + newLevel));
     			}
     		}
+    		
+            // TODO: replace nested ((ac:name="hshift">N))
+            // TODO: with ((ac:name="hshift">N+hshift))
     	}
     	m.appendTail(sb);
     	
-    	// TODO: use XhtmlContent to convert macro invocations after  
-        // TODO: replacing nested ((ac:name="hshift">N))
-        // TODO: with ((ac:name="hshift">N+hshift))
-    	
-    	return sb.toString();
-    }
-
-	private static Pattern linkSpecialChars = Pattern.compile("[ (){}\\[\\]\\/@-]");
-
-    private String makeSectionAnchorName(String pageTitle, String sectionTitle)
-    {
-    	String anchorName = pageTitle + "-" + sectionTitle;
-    	Matcher m = linkSpecialChars.matcher(anchorName);
-    	StringBuffer rc = new StringBuffer();
-    	int keepHypenAt = pageTitle.length();
-    	while (m.find())
-    	{
-    		int off = m.start();
-    		if (off == keepHypenAt)
-    		{
-    			m.appendReplacement(rc, "-");
-    			continue;
-    		}
-    		char c = anchorName.charAt(off);
-    		switch (c)
-    		{
-    		case ' ': m.appendReplacement(rc, ""); break;
-    		default : m.appendReplacement(rc, "%"+Integer.toHexString(0x100 | c).substring(1)); break;
-    		}
+    	try {
+    		return xhtmlUtils.convertStorageToView(sb.toString(), context);
     	}
-    	m.appendTail(rc);
-    	return rc.toString();
-	}
+    	catch (Exception e) {
+    		return error(e.toString());
+    	}
+    }
 
 	@Override
     public BodyType getBodyType()
