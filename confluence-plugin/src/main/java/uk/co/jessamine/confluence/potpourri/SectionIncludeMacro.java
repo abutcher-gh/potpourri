@@ -5,7 +5,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import com.atlassian.confluence.content.render.xhtml.ConversionContext;
-import com.atlassian.confluence.content.render.xhtml.XhtmlException;
 import com.atlassian.confluence.macro.Macro;
 import com.atlassian.confluence.macro.MacroExecutionException;
 import com.atlassian.confluence.pages.PageManager;
@@ -28,7 +27,7 @@ public class SectionIncludeMacro implements Macro
     	return "<p><strong>SectionIncludeMacro: <em>Error:</em></strong> " + error + "</p>";
     }
     
-	private static Pattern headingPattern = Pattern.compile("</?h[1-6]");
+	private static Pattern headingPattern = Pattern.compile("(</?h[1-6]|ac:name=\"hshift\">[1-5])");
     
     @Override
     public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -60,9 +59,10 @@ public class SectionIncludeMacro implements Macro
     	while (m.find())
     	{
     		int off = m.start();
+    		char first = included.charAt(off);
     		
     		// process <hN>...</hN> elements
-    		if (included.charAt(off) == '<')
+    		if (first == '<')
     		{
     			if (included.charAt(off+1) != '/')
     			{
@@ -83,9 +83,15 @@ public class SectionIncludeMacro implements Macro
         			m.appendReplacement(sb, Matcher.quoteReplacement("<span class='hidden'>S" + hshift + "</span></h" + newLevel));
     			}
     		}
-    		
-            // TODO: replace nested ((ac:name="hshift">N))
-            // TODO: with ((ac:name="hshift">N+hshift))
+    		else if (first == 'a')
+    		{
+    			// 012345678901234567
+    			// ac:name="hshift">N
+    			
+				int newLevel = included.charAt(off+17) - '0' + hshift;
+    			
+    			m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
+    		}
     	}
     	m.appendTail(sb);
     	
