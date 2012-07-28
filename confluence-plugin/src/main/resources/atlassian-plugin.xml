@@ -18,13 +18,22 @@
 		<context>editor</context>
 	</web-resource>
 
-	<xhtml-macro name="section-include" class="uk.co.jessamine.confluence.potpourri.SectionIncludeMacro" 
-		key="section-include">
-	   <category name="confluence-content"/>
-	   <parameters>
+   <xhtml-macro name="section-include" class="uk.co.jessamine.confluence.potpourri.SectionIncludeMacro" 
+      key="section-include">
+      <category name="confluence-content"/>
+      <parameters>
           <parameter name="page" type="confluence-content" required="true" />
-          <parameter name="hshift" type="string" />
+          <parameter name="hshift" type="string" required="true" />
+          <parameter name="remove-toc" type="boolean" default="true" />
           <parameter name="space" type="spacekey" />
-	   </parameters>
-	</xhtml-macro>
+      </parameters>
+   </xhtml-macro>
+
+   <xhtml-macro name="identity" class="uk.co.jessamine.confluence.potpourri.IdentityMacro" 
+      key="identity" hidden="true">
+      <parameters/>
+   </xhtml-macro>
+   
+   <resource type="i18n" name="i18n" location="potpourri" />
+   
 </atlassian-plugin>

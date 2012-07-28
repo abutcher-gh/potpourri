@@ -27,7 +27,8 @@ public class SectionIncludeMacro implements Macro
     	return "<p><strong>SectionIncludeMacro: <em>Error:</em></strong> " + error + "</p>";
     }
     
-	private static Pattern headingPattern = Pattern.compile("(</?h[1-6]|ac:name=\"hshift\">[1-5])");
+	private static Pattern patterns = Pattern.compile
+			("(</?h[1-6]|ac:name=\"hshift\">[1-5]|c:name=\"(toc|toc-zone)\")");
     
     @Override
     public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -50,12 +51,17 @@ public class SectionIncludeMacro implements Macro
         	if (hshiftParam != null)
         		hshift = Integer.parseInt(hshiftParam);
         }
+    	boolean removeToc = true;
+    	{
+    	   	String removeTocParam = parameters.get("remove-toc");
+        	if (removeTocParam != null)
+        		removeToc = Boolean.parseBoolean(removeTocParam);
+    	}
 
     	String included = page.getBodyAsString();
 
-    	Matcher m = headingPattern.matcher(included);
+    	Matcher m = patterns.matcher(included);
     	StringBuffer sb = new StringBuffer();
-    	int lastHtagStart = 0;
     	while (m.find())
     	{
     		int off = m.start();
@@ -70,8 +76,6 @@ public class SectionIncludeMacro implements Macro
     				if (newLevel > 6)
     					newLevel = 6; // XXX: better alternative might be to change to one-line strong paragraph
 
-    				lastHtagStart = off; // record for capturing the section title (for anchoring)
-    				
         			m.appendReplacement(sb, Matcher.quoteReplacement("<h" + newLevel));
     			}
     			else
@@ -91,6 +95,10 @@ public class SectionIncludeMacro implements Macro
 				int newLevel = included.charAt(off+17) - '0' + hshift;
     			
     			m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
+    		}
+    		else if (removeToc && first == 'c')
+    		{
+    			m.appendReplacement(sb, Matcher.quoteReplacement("c:name=\"identity\""));
     		}
     	}
     	m.appendTail(sb);
