@@ -84,7 +84,7 @@ public class SectionIncludeMacro implements Macro
                if (newLevel > 6)
                   newLevel = 6; // XXX: better alternative might be to change to one-line strong paragraph
 
-               m.appendReplacement(sb, Matcher.quoteReplacement("<span class='hidden'>S" + hshift + "</span></h" + newLevel));
+               m.appendReplacement(sb, Matcher.quoteReplacement("</h" + newLevel));
             }
          }
          else if (first == 'a')
