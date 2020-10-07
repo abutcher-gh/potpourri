@@ -28,7 +28,7 @@ public class SectionIncludeMacro implements Macro
    }
 
    private static Pattern patterns = Pattern.compile
-                                     ("(</?h[1-6]|ac:name=\"hshift\">[1-5]|c:name=\"(toc|toc-zone)\")");
+                                     ("</?h[1-6]|ac:name=\"hshift\">[1-5]|(ac:name=\"gliffy\"[^>]*>)(.*?)(</ac:structured-macro)|c:name=\"(toc|toc-zone)\"");
 
    @Override
    public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -91,10 +91,25 @@ public class SectionIncludeMacro implements Macro
          {
             // 012345678901234567
             // ac:name="hshift">N
+            // ac:name="gliffy"
+            // 012345678901234567
 
-            int newLevel = included.charAt(off+17) - '0' + hshift;
-
-            m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
+            if (included.charAt(off+9) == 'g')
+            {
+               // To prevent included-page-local Gliffy diagrams from forcing
+               // an infinite relink loop, ensure that the pageid parameter is
+               // present.  Also, disable the UI controls for included Gliffys.
+               String parms = m.group(2);
+               if (!parms.contains("pageid"))
+                  parms += "<ac:parameter ac:name=\"pageid\">" + String.valueOf(page.getId()) + "</ac:parameter>";
+               parms += "<ac:parameter ac:name=\"chrome\">min</ac:parameter>";
+               m.appendReplacement(sb, Matcher.quoteReplacement(m.group(1) + parms + m.group(3)));
+            }
+            else
+            {
+               int newLevel = included.charAt(off+17) - '0' + hshift;
+               m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
+            }
          }
          else if (removeToc && first == 'c')
          {
@@ -105,6 +120,11 @@ public class SectionIncludeMacro implements Macro
 
       try
       {
+         // For debugging transformations, use this:
+         // return xhtmlUtils.convertStorageToView(
+         //     "<ac:structured-macro ac:name=\"noformat\"><ac:plain-text-body><![CDATA["
+         //     + sb.toString().replace("]]>", "]]]]><![CDATA[>").replace("<ac", "\n<ac")
+         //     + "]]></ac:plain-text-body></ac:structured-macro>", context);
          return xhtmlUtils.convertStorageToView(sb.toString(), context);
       }
       catch (Exception e)
