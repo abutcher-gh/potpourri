@@ -28,7 +28,7 @@ public class SectionIncludeMacro implements Macro
    }
 
    private static Pattern patterns = Pattern.compile
-                                     ("</?h[1-6]|ac:name=\"hshift\">[1-5]|(ac:name=\"gliffy\"[^>]*>)(.*?)(</ac:structured-macro)|c:name=\"(toc|toc-zone|hide-if-included)\"");
+                                     ("</?h[1-6]|ac:name=\"hshift\">[1-5]|(ac:name=\"gliffy\"[^>]*>)(.*?)(</ac:structured-macro)|(ri:attachment +ri:filename=\"[^\"]*\") */>|c:name=\"(toc|toc-zone|hide-if-included)\"");
 
    @Override
    public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -110,6 +110,17 @@ public class SectionIncludeMacro implements Macro
                int newLevel = included.charAt(off+17) - '0' + hshift;
                m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
             }
+         }
+         else if (first == 'r')
+         {
+            // For attachments local to the page, add an explicit space and
+            // page identifier so that they can be shown referentially on an
+            // including page.
+            m.appendReplacement(sb, Matcher.quoteReplacement(
+                  m.group(4) + ">" +
+                     "<ri:page ri:space-key='" + page.getSpaceKey() + "'" +
+                             " ri:content-title='" + page.getTitle() + "' />" +
+                  "</ri:attachment>"));
          }
          // c:name="toc"
          // c:name="toc-zone"
