@@ -21,6 +21,12 @@
    <xhtml-macro name="section-include" class="uk.co.jessamine.confluence.potpourri.SectionIncludeMacro" 
       key="section-include">
       <category name="confluence-content"/>
+      <description>
+        Supports creating composite documents.
+        Works like the built-in include-page macro but supports shifting heading level within the included pages.
+        Supports nested head inclusion.  Also allows for excluding table-of-contents from included pages.
+        Other areas of included pages may be excluded via the hide-if-included macro.
+      </description>
       <parameters>
           <parameter name="page" type="confluence-content" required="true" />
           <parameter name="hshift" type="string" required="true" />
@@ -29,11 +35,21 @@
       </parameters>
    </xhtml-macro>
 
-   <xhtml-macro name="identity" class="uk.co.jessamine.confluence.potpourri.IdentityMacro" 
-      key="identity" hidden="true">
+   <xhtml-macro name="dont-display" class="uk.co.jessamine.confluence.potpourri.DontDisplayMacro"
+      key="dont-display" hidden="true">
       <parameters/>
    </xhtml-macro>
-   
+
+   <xhtml-macro name="hide-if-included" class="uk.co.jessamine.confluence.potpourri.HideInSectionIncludeMacro"
+      key="hide-if-included">
+      <category name="confluence-content"/>
+      <description>
+        Supports excluding content from pages included via section-include.  Allows for included pages
+        to contain details that shouldn't be "published" to the including document.
+      </description>
+      <parameters/>
+   </xhtml-macro>
+
    <resource type="i18n" name="i18n" location="potpourri" />
-   
+
 </atlassian-plugin>

@@ -28,7 +28,7 @@ public class SectionIncludeMacro implements Macro
    }
 
    private static Pattern patterns = Pattern.compile
-                                     ("</?h[1-6]|ac:name=\"hshift\">[1-5]|(ac:name=\"gliffy\"[^>]*>)(.*?)(</ac:structured-macro)|c:name=\"(toc|toc-zone)\"");
+                                     ("</?h[1-6]|ac:name=\"hshift\">[1-5]|(ac:name=\"gliffy\"[^>]*>)(.*?)(</ac:structured-macro)|c:name=\"(toc|toc-zone|hide-if-included)\"");
 
    @Override
    public String execute(Map<String, String> parameters, String body, ConversionContext context) throws MacroExecutionException
@@ -111,9 +111,13 @@ public class SectionIncludeMacro implements Macro
                m.appendReplacement(sb, Matcher.quoteReplacement("ac:name=\"hshift\">" + newLevel));
             }
          }
-         else if (removeToc && first == 'c')
+         // c:name="toc"
+         // c:name="toc-zone"
+         // c:name="hide-if-included"
+         // 012345678
+         else if (first == 'c' && (included.charAt(off+8) == 'h' || removeToc))
          {
-            m.appendReplacement(sb, Matcher.quoteReplacement("c:name=\"identity\""));
+            m.appendReplacement(sb, Matcher.quoteReplacement("c:name=\"dont-display\""));
          }
       }
       m.appendTail(sb);

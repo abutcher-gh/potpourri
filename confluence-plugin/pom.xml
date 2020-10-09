@@ -7,7 +7,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>uk.co.jessamine.confluence</groupId>
     <artifactId>potpourri</artifactId>
-    <version>0.6</version>
+    <version>0.7</version>
 
     <organization>
         <name>Adam Butcher</name>
